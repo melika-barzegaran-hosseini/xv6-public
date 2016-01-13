@@ -464,3 +464,9 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int getproc(struct proc* p)
+{
+  memmove(p, proc, sizeof(struct proc));
+  return 0;
+}

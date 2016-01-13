@@ -89,3 +89,15 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_getproc(void)
+{
+  struct proc *p;
+
+  if(argptr(0, (void*)&p, sizeof(*p)) < 0)
+  {
+    return -1;
+  }
+
+  return getproc(p);
+}
