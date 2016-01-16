@@ -122,6 +122,7 @@ void            wakeup(void*);
 void            yield(void);
 int             getproc(struct proc*);
 int             getpgs(char*);
+int             loadproc(struct proc*, char*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

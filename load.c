@@ -134,5 +134,23 @@ int main(int argc, char *argv[])
     printf(stdout, "eip = %d\n", p->context->eip);
     printf(stdout, "----------------------------------------------------------\n");
 
+    int pid = loadproc(p, pgs);
+    if(pid < 0)
+    {
+        printf(stderr, "error: an error occured while forking.\n");
+        exit();
+    }
+    else if(pid == 0)
+    {
+        printf(stdout, "child\n");
+    }
+    else
+    {
+        printf(stdout, "parent\n");
+        wait();
+    }
+
+    printf(stdout, "both\n");
+
     exit();
 }
