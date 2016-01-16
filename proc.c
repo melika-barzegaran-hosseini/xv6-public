@@ -641,7 +641,14 @@ int getpgdir(pde_t* pgdir, char *mem)
   }
   cprintf("------------------------------------------------------------------\n");
 
-  cprintf("===================== kernelspace-copy_pgdir =====================\n");
+  cprintf("==================== kernelspace-copy_pgdir ====================\n");
+  for(i = 0; i < 12 * PGSIZE; i += PGSIZE)
+  {
+    cprintf("page '%d'th = %d\n", i/PGSIZE, *(pgdir + i));
+  }
+  cprintf("------------------------------------------------------------------\n");
+
+  cprintf("===================== kernelspace-copy_mem =====================\n");
   for(i = 0; i < 12 * PGSIZE; i += PGSIZE)
   {
     cprintf("page '%d'th = %d\n", i/PGSIZE, *(mem + i));

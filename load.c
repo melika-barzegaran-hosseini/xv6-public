@@ -53,16 +53,22 @@ void load(char* name, void* ptr, int size)
 int main(int argc, char *argv[])
 {
     struct proc* p = (struct proc*) malloc(sizeof(struct proc));
-
-    p->pgdir = (pde_t*) malloc(sizeof(p->sz));
+    load("backup", p, sizeof(struct proc));
+    p->pgdir = (pde_t*) malloc(sizeof(pde_t) * p->sz/PGSIZE);
+//    p->pgdir = (pde_t*) malloc(12 * PGSIZE);
     p->tf = (struct trapframe*) malloc(sizeof(struct trapframe));
     p->context = (struct context*) malloc(sizeof(struct context));
     p->cwd = (struct inode*) malloc(sizeof(struct inode));
 
-    load("backup", p, sizeof(struct proc));
+    char* mem = (char*) malloc(p->sz);
+
+
     //load("pgdir", p->pgdir, sizeof(p->sz));
     load("tf", p->tf, sizeof(struct trapframe));
     load("context", p->context, sizeof(struct context));
+    load("pgdir", p->pgdir, sizeof(pde_t) * p->sz/PGSIZE);
+    printf(stdout, "injam\n");
+    load("mem", mem, p->sz);
 
     //proc
     printf(stdout, "======================== userspace_after loading: sz, name, kstack =========================\n");
@@ -71,16 +77,22 @@ int main(int argc, char *argv[])
     printf(stdout, "kstack = %s\n", p->kstack);
     printf(stdout, "--------------------------------------------------------------------------------------------\n");
 
-    /*
-    //pgdir
-    printf(stdout, "========================userspace_after loading: pgdir=========================\n");
+    //mem
+    printf(stdout, "========================userspace_after loading: mem=========================\n");
     int i;
     for(i = 0; i < p->sz; i += PGSIZE)
+    {
+        printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(mem + i));
+    }
+    printf(stdout, "-------------------------------------------------------------------------------\n");
+
+    //pgdir
+    printf(stdout, "========================userspace_after loading: pgdir=========================\n");
+    for(i = 0; i < 12 * PGSIZE; i += PGSIZE)
     {
         printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(p->pgdir + i));
     }
     printf(stdout, "-------------------------------------------------------------------------------\n");
-    */
 
     //tf
     printf(stdout, "======================== userspace_after loading: tf =========================\n");

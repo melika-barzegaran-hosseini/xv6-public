@@ -100,21 +100,34 @@ void stop(void)
     save("tf", p->tf, sizeof(struct trapframe));
     save("context", p->context, sizeof(struct context));
 
-    //pgdir
+
+
+
+    int i;
     int num = p->sz/PGSIZE;
-    pde_t* pgdir = (pde_t*) malloc(sizeof(pde_t) * num * 1000);
-    char* mem = (char*) malloc(p->sz * 1000);
+    pde_t* pgdir = (pde_t*) malloc(sizeof(pde_t) * num);
+    char* mem = (char*) malloc(p->sz);
     getpgdir(pgdir, mem);
 
+//    pgdir
     printf(stdout, "========================userspace_before saving: pgdir=========================\n");
-    int i;
+    for(i = 0; i < 12 * PGSIZE; i += PGSIZE)
+    {
+        printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(p->pgdir + i));
+    }
+    printf(stdout, "-------------------------------------------------------------------------------\n");
+
+    //mem
+    printf(stdout, "========================userspace_before saving: mem=========================\n");
+
     for(i = 0; i < p->sz; i += PGSIZE)
     {
         printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(mem + i));
     }
     printf(stdout, "-------------------------------------------------------------------------------\n");
 
-    save("pgdir", pgdir, sizeof(sizeof(pde_t) * num));
+    save("pgdir", pgdir, sizeof(pde_t) * num);
+    save("mem", mem, p->sz);
 
     printf(stdout, "+++++++++++++++++++++++++++++++++++++++++stop function++++++++++++++++++++++++++++++++++++++\n");
     exit();
