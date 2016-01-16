@@ -105,23 +105,28 @@ void stop(void)
     save("tf", p->tf, sizeof(struct trapframe));
     save("context", p->context, sizeof(struct context));
 
-    /*
-    pde_t* pgdir = (pde_t*) malloc(sizeof(p->sz));
-    getpgdir(pgdir);
-
-    //pgdir
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: pgdir\n");
-    printf(stdout, "==========================================================\n");
+    int num = p->sz / PGSIZE;
+    pde_t* pgdir = (pde_t*) malloc(sizeof(pde_t) * num);
+    char* pgs = (char *) malloc(p->sz);
     int i;
-    for(i = 0; i < p->sz; i += PGSIZE)
+    for(i = 0; i < num; i++)
     {
-        printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(pgdir + i));
+        *(pgdir + i) = (pde_t) (pgs + i * PGSIZE);
+    }
+
+    getpgs(pgdir, pgs);
+
+    //pgs
+    printf(stdout, "========================userspace=========================\n");
+    printf(stdout, "before saving: pgs\n");
+    printf(stdout, "==========================================================\n");
+    for(i = 0; i < num; i++)
+    {
+        printf(stdout, "page '%d'th = %d\n", i, *(pgs + i * PGSIZE));
     }
     printf(stdout, "----------------------------------------------------------\n");
 
-    save("pgdir", pgdir, sizeof(p->sz));
-    */
+    save("pgs", pgs, sizeof(p->sz));
 
     exit();
 }
