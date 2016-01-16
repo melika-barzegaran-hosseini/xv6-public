@@ -606,7 +606,7 @@ int getpgs(pde_t* pgdir, char* pgs)
 
   for(i = 0; i < proc->sz; i += PGSIZE)
   {
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+    if((pte = walkpgdir(proc->pgdir, (void *) i, 0)) == 0)
     {
       panic("copyuvm: pte should exist");
     }
@@ -622,13 +622,13 @@ int getpgs(pde_t* pgdir, char* pgs)
 
   //todo
 
-  int num = sizeof(pde_t) * (proc->sz / PGSIZE);
+  int num = proc->sz / PGSIZE;
   cprintf("====================kernelspace-origin====================\n");
   cprintf("pgs\n");
   cprintf("==========================================================\n");
   for(i = 0; i < num; i++)
   {
-    cprintf("page '%d'th = %d\n", i, *(pgs + i * PGSIZE));
+    cprintf("page '%d'th = %d\n", i, *(proc->pgdir + i * PGSIZE));
   }
   cprintf("----------------------------------------------------------\n");
 
