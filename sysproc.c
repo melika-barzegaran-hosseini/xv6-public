@@ -101,3 +101,15 @@ int sys_getproc(void)
 
   return getproc(p);
 }
+
+int sys_getpgdir(void)
+{
+  pde_t *pgdir;
+
+  if(argptr(0, (void*)&pgdir, sizeof(*pgdir)) < 0)
+  {
+    return -1;
+  }
+
+  return getpgdir(pgdir);
+}

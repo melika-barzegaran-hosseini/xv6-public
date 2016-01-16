@@ -12,56 +12,83 @@
 int stdout = 1;
 int stderr = 2;
 
-void save(char* name, void* ptr, int size)
+void load(char* name, void* ptr, int size)
 {
-    printf(stdout, "saving...\n");
+    printf(stdout, "loading...\n");
 
-    int fd = open(name, O_CREATE|O_RDWR);
+    int fd = open(name, O_RDONLY);
     if(fd >= 0)
     {
-        printf(stdout, "the file '%s' is created.\n", name);
+        printf(stdout, "the file '%s' is opened.\n", name);
     }
     else
     {
-        printf(stderr, "error: an error occured while creating the file '%s'.\n", name);
+        printf(stderr, "error: an error occured while opening the file '%s'.\n", name);
         exit();
     }
 
-    if(write(fd, ptr, size) == size)
+    if(read(fd, ptr, size) == size)
     {
-        printf(stdout, "the process info is written to the file '%s'.\n", name);
+        printf(stdout, "the process info is read from the file '%s'.\n", name);
     }
     else
     {
-        printf(stderr, "error: an error occured while writing to the file '%s'.\n", name);
+        printf(stderr, "error: an error occured while reading from the file '%s'.\n", name);
         exit();
     }
 
     close(fd);
+
+    if(unlink(name) >= 0)
+    {
+        printf(stdout, "the file '%s' is deleted.\n", name);
+    }
+    else
+    {
+        printf(stderr, "error: an error occured while unlinking the file '%s'.\n", name);
+        exit();
+    }
 }
 
-void stop(void)
+int main(int argc, char *argv[])
 {
     struct proc* p = (struct proc*) malloc(sizeof(struct proc));
 
+    p->pgdir = (pde_t*) malloc(sizeof(p->sz));
     p->tf = (struct trapframe*) malloc(sizeof(struct trapframe));
     p->context = (struct context*) malloc(sizeof(struct context));
     p->cwd = (struct inode*) malloc(sizeof(struct inode));
 
-    getproc(p);
+    load("backup", p, sizeof(struct proc));
+    //load("pgdir", p->pgdir, sizeof(p->sz));
+    load("tf", p->tf, sizeof(struct trapframe));
+    load("context", p->context, sizeof(struct context));
 
-    //sz, name, kstack
+    //proc
     printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: sz, name, kstack\n");
+    printf(stdout, "after loading: sz, name, kstack\n");
     printf(stdout, "==========================================================\n");
     printf(stdout, "sz = %d\n", p->sz);
     printf(stdout, "name = %s\n", p->name);
     printf(stdout, "kstack = %s\n", p->kstack);
     printf(stdout, "----------------------------------------------------------\n");
 
+    /*
+    //pgdir
+    printf(stdout, "========================userspace=========================\n");
+    printf(stdout, "after loading: pgdir\n");
+    printf(stdout, "==========================================================\n");
+    int i;
+    for(i = 0; i < p->sz; i += PGSIZE)
+    {
+        printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(p->pgdir + i));
+    }
+    printf(stdout, "----------------------------------------------------------\n");
+    */
+
     //tf
     printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: tf\n");
+    printf(stdout, "after loading: tf\n");
     printf(stdout, "==========================================================\n");
     printf(stdout, "edi = %d\n", p->tf->edi);
     printf(stdout, "esi = %d\n", p->tf->esi);
@@ -92,7 +119,7 @@ void stop(void)
 
     //context
     printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: context\n");
+    printf(stdout, "after loading: context\n");
     printf(stdout, "==========================================================\n");
     printf(stdout, "edi = %d\n", p->context->edi);
     printf(stdout, "esi = %d\n", p->context->esi);
@@ -101,65 +128,5 @@ void stop(void)
     printf(stdout, "eip = %d\n", p->context->eip);
     printf(stdout, "----------------------------------------------------------\n");
 
-    save("backup", p, sizeof(struct proc));
-    save("tf", p->tf, sizeof(struct trapframe));
-    save("context", p->context, sizeof(struct context));
-
-    /*
-    pde_t* pgdir = (pde_t*) malloc(sizeof(p->sz));
-    getpgdir(pgdir);
-
-    //pgdir
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: pgdir\n");
-    printf(stdout, "==========================================================\n");
-    int i;
-    for(i = 0; i < p->sz; i += PGSIZE)
-    {
-        printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(pgdir + i));
-    }
-    printf(stdout, "----------------------------------------------------------\n");
-
-    save("pgdir", pgdir, sizeof(p->sz));
-    */
-
     exit();
-}
-
-int main(int argc, char *argv[])
-{
-    if(argc != 2)
-    {
-        printf(stderr, "usage: increment [integer]\n");
-        exit();
-    }
-    else
-    {
-        int base = 1;
-        int limit = atoi(argv[1]);
-
-        if(limit <= 0)
-        {
-            printf(stderr, "error: the increment argument must be greater than zero.\n");
-            exit();
-        }
-        else
-        {
-            printf(stdout, "starting to count...\n");
-
-            int counter;
-            for(counter = base; counter <= limit; counter++)
-            {
-                printf(stdout, "%d\n", counter);
-                sleep(100);
-
-                if(counter % 2 == 0)
-                {
-                    stop();
-                }
-            }
-
-            exit();
-        }
-    }
 }

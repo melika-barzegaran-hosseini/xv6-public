@@ -7,6 +7,9 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#include "fs.h"
+#include "file.h"
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -55,11 +58,11 @@ found:
     return 0;
   }
   sp = p->kstack + KSTACKSIZE;
-  
+
   // Leave room for trap frame.
   sp -= sizeof *p->tf;
   p->tf = (struct trapframe*)sp;
-  
+
   // Set up new context to start executing at forkret,
   // which returns to trapret.
   sp -= 4;
@@ -80,7 +83,7 @@ userinit(void)
 {
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
-  
+
   p = allocproc();
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
@@ -108,7 +111,7 @@ int
 growproc(int n)
 {
   uint sz;
-  
+
   sz = proc->sz;
   if(n > 0){
     if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
@@ -155,14 +158,14 @@ fork(void)
   np->cwd = idup(proc->cwd);
 
   safestrcpy(np->name, proc->name, sizeof(proc->name));
- 
+
   pid = np->pid;
 
   // lock to force the compiler to emit the np->state write last.
   acquire(&ptable.lock);
   np->state = RUNNABLE;
   release(&ptable.lock);
-  
+
   return pid;
 }
 
@@ -342,7 +345,7 @@ forkret(void)
     iinit(ROOTDEV);
     initlog(ROOTDEV);
   }
-  
+
   // Return to "caller", actually trapret (see allocproc).
 }
 
@@ -447,7 +450,7 @@ procdump(void)
   struct proc *p;
   char *state;
   uint pc[10];
-  
+
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == UNUSED)
       continue;
@@ -467,6 +470,132 @@ procdump(void)
 
 int getproc(struct proc* p)
 {
-  memmove(p, proc, sizeof(struct proc));
+  p->sz = proc->sz;
+  safestrcpy(p->name, proc->name, sizeof(proc->name));
+  *(p->tf) = *(proc->tf);
+  *(p->context) = *(proc->context);
+
+  cprintf("====================kernelspace-origin====================\n");
+  cprintf("sz, name, kstack\n");
+  cprintf("==========================================================\n");
+  cprintf("sz = %d\n", proc->sz);
+  cprintf("name = %s\n", proc->name);
+  cprintf("kstack = %s\n", proc->kstack);
+  cprintf("----------------------------------------------------------\n");
+
+  cprintf("=====================kernelspace-copy=====================\n");
+  cprintf("sz, name, kstack\n");
+  cprintf("==========================================================\n");
+  cprintf("sz = %d\n", p->sz);
+  cprintf("name = %s\n", p->name);
+  cprintf("kstack = %s\n", p->kstack);
+  cprintf("----------------------------------------------------------\n");
+
+  cprintf("====================kernelspace-origin====================\n");
+  cprintf("tf\n");
+  cprintf("==========================================================\n");
+  cprintf("edi = %d\n", proc->tf->edi);
+  cprintf("esi = %d\n", proc->tf->esi);
+  cprintf("ebp = %d\n", proc->tf->ebp);
+  cprintf("oesp = %d\n", proc->tf->oesp);
+  cprintf("ebx = %d\n", proc->tf->ebx);
+  cprintf("edx = %d\n", proc->tf->edx);
+  cprintf("ecx = %d\n", proc->tf->ecx);
+  cprintf("eax = %d\n", proc->tf->eax);
+  cprintf("gs = %d\n", proc->tf->gs);
+  cprintf("padding1 = %d\n", proc->tf->padding1);
+  cprintf("fs = %d\n", proc->tf->fs);
+  cprintf("padding2 = %d\n", proc->tf->padding2);
+  cprintf("es = %d\n", proc->tf->es);
+  cprintf("padding3 = %d\n", proc->tf->padding3);
+  cprintf("ds = %d\n", proc->tf->ds);
+  cprintf("padding4 = %d\n", proc->tf->padding4);
+  cprintf("trapno = %d\n", proc->tf->trapno);
+  cprintf("err = %d\n", proc->tf->err);
+  cprintf("eip = %d\n", proc->tf->eip);
+  cprintf("cs = %d\n", proc->tf->cs);
+  cprintf("padding5 = %d\n", proc->tf->padding5);
+  cprintf("eflags = %d\n", proc->tf->eflags);
+  cprintf("esp = %d\n", proc->tf->esp);
+  cprintf("ss = %d\n", proc->tf->ss);
+  cprintf("padding6 = %d\n", proc->tf->padding6);
+  cprintf("----------------------------------------------------------\n");
+
+  cprintf("=====================kernelspace-copy=====================\n");
+  cprintf("tf\n");
+  cprintf("==========================================================\n");
+  cprintf("edi = %d\n", p->tf->edi);
+  cprintf("esi = %d\n", p->tf->esi);
+  cprintf("ebp = %d\n", p->tf->ebp);
+  cprintf("oesp = %d\n", p->tf->oesp);
+  cprintf("ebx = %d\n", p->tf->ebx);
+  cprintf("edx = %d\n", p->tf->edx);
+  cprintf("ecx = %d\n", p->tf->ecx);
+  cprintf("eax = %d\n", p->tf->eax);
+  cprintf("gs = %d\n", p->tf->gs);
+  cprintf("padding1 = %d\n", p->tf->padding1);
+  cprintf("fs = %d\n", p->tf->fs);
+  cprintf("padding2 = %d\n", p->tf->padding2);
+  cprintf("es = %d\n", p->tf->es);
+  cprintf("padding3 = %d\n", p->tf->padding3);
+  cprintf("ds = %d\n", p->tf->ds);
+  cprintf("padding4 = %d\n", p->tf->padding4);
+  cprintf("trapno = %d\n", p->tf->trapno);
+  cprintf("err = %d\n", p->tf->err);
+  cprintf("eip = %d\n", p->tf->eip);
+  cprintf("cs = %d\n", p->tf->cs);
+  cprintf("padding5 = %d\n", p->tf->padding5);
+  cprintf("eflags = %d\n", p->tf->eflags);
+  cprintf("esp = %d\n", p->tf->esp);
+  cprintf("ss = %d\n", p->tf->ss);
+  cprintf("padding6 = %d\n", p->tf->padding6);
+  cprintf("----------------------------------------------------------\n");
+
+  cprintf("====================kernelspace-origin====================\n");
+  cprintf("context\n");
+  cprintf("==========================================================\n");
+  cprintf("edi = %d\n", proc->context->edi);
+  cprintf("esi = %d\n", proc->context->esi);
+  cprintf("ebx = %d\n", proc->context->ebx);
+  cprintf("ebp = %d\n", proc->context->ebp);
+  cprintf("eip = %d\n", proc->context->eip);
+  cprintf("----------------------------------------------------------\n");
+
+  cprintf("=====================kernelspace-copy=====================\n");
+  cprintf("context\n");
+  cprintf("==========================================================\n");
+  cprintf("edi = %d\n", p->context->edi);
+  cprintf("esi = %d\n", p->context->esi);
+  cprintf("ebx = %d\n", p->context->ebx);
+  cprintf("ebp = %d\n", p->context->ebp);
+  cprintf("eip = %d\n", p->context->eip);
+  cprintf("----------------------------------------------------------\n");
+
+  return 0;
+}
+
+int getpgdir(pde_t* pgdir)
+{
+  //todo
+
+  int i;
+  cprintf("====================kernelspace-origin====================\n");
+  cprintf("pgdir\n");
+  cprintf("==========================================================\n");
+  for(i = 0; i < proc->sz; i += PGSIZE)
+  {
+    cprintf("page '%d'th = %d\n", i/PGSIZE, *(proc->pgdir + i));
+  }
+  cprintf("----------------------------------------------------------\n");
+
+  cprintf("=====================kernelspace-copy=====================\n");
+  cprintf("pgdir\n");
+  cprintf("==========================================================\n");
+  for(i = 0; i < proc->sz; i += PGSIZE)
+  {
+    cprintf("page '%d'th = %d\n", i/PGSIZE, *(pgdir + i));
+  }
+  cprintf("----------------------------------------------------------\n");
+
   return 0;
 }
