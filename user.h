@@ -24,7 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int getproc(void*);
-int getpgdir(void*);
+int getpgdir(void*, char*);
 
 // ulib.c
 int stat(char*, struct stat*);

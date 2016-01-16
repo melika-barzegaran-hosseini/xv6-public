@@ -42,6 +42,7 @@ void save(char* name, void* ptr, int size)
 
 void stop(void)
 {
+    printf(stdout, "+++++++++++++++++++++++++++++++++++++++++stop function++++++++++++++++++++++++++++++++++++++\n");
     struct proc* p = (struct proc*) malloc(sizeof(struct proc));
 
     p->tf = (struct trapframe*) malloc(sizeof(struct trapframe));
@@ -51,18 +52,14 @@ void stop(void)
     getproc(p);
 
     //sz, name, kstack
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: sz, name, kstack\n");
-    printf(stdout, "==========================================================\n");
+    printf(stdout, "======================== userspace_before saving: sz, name, kstack =========================\n");
     printf(stdout, "sz = %d\n", p->sz);
     printf(stdout, "name = %s\n", p->name);
     printf(stdout, "kstack = %s\n", p->kstack);
-    printf(stdout, "----------------------------------------------------------\n");
+    printf(stdout, "--------------------------------------------------------------------------------------------\n");
 
     //tf
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: tf\n");
-    printf(stdout, "==========================================================\n");
+    printf(stdout, "======================== userspace_before saving: tf =========================\n");
     printf(stdout, "edi = %d\n", p->tf->edi);
     printf(stdout, "esi = %d\n", p->tf->esi);
     printf(stdout, "ebp = %d\n", p->tf->ebp);
@@ -88,41 +85,38 @@ void stop(void)
     printf(stdout, "esp = %d\n", p->tf->esp);
     printf(stdout, "ss = %d\n", p->tf->ss);
     printf(stdout, "padding6 = %d\n", p->tf->padding6);
-    printf(stdout, "----------------------------------------------------------\n");
+    printf(stdout, "------------------------------------------------------------------------------\n");
 
     //context
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: context\n");
-    printf(stdout, "==========================================================\n");
+    printf(stdout, "======================== userspace_before saving: context =========================\n");
     printf(stdout, "edi = %d\n", p->context->edi);
     printf(stdout, "esi = %d\n", p->context->esi);
     printf(stdout, "ebx = %d\n", p->context->ebx);
     printf(stdout, "ebp = %d\n", p->context->ebp);
     printf(stdout, "eip = %d\n", p->context->eip);
-    printf(stdout, "----------------------------------------------------------\n");
+    printf(stdout, "-----------------------------------------------------------------------------------\n");
 
     save("backup", p, sizeof(struct proc));
     save("tf", p->tf, sizeof(struct trapframe));
     save("context", p->context, sizeof(struct context));
 
-    /*
-    pde_t* pgdir = (pde_t*) malloc(sizeof(p->sz));
-    getpgdir(pgdir);
-
     //pgdir
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "before saving: pgdir\n");
-    printf(stdout, "==========================================================\n");
+    int num = p->sz/PGSIZE;
+    pde_t* pgdir = (pde_t*) malloc(sizeof(pde_t) * num * 1000);
+    char* mem = (char*) malloc(p->sz * 1000);
+    getpgdir(pgdir, mem);
+
+    printf(stdout, "========================userspace_before saving: pgdir=========================\n");
     int i;
     for(i = 0; i < p->sz; i += PGSIZE)
     {
-        printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(pgdir + i));
+        printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(mem + i));
     }
-    printf(stdout, "----------------------------------------------------------\n");
+    printf(stdout, "-------------------------------------------------------------------------------\n");
 
-    save("pgdir", pgdir, sizeof(p->sz));
-    */
+    save("pgdir", pgdir, sizeof(sizeof(pde_t) * num));
 
+    printf(stdout, "+++++++++++++++++++++++++++++++++++++++++stop function++++++++++++++++++++++++++++++++++++++\n");
     exit();
 }
 

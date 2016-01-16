@@ -105,11 +105,17 @@ int sys_getproc(void)
 int sys_getpgdir(void)
 {
   pde_t *pgdir;
+  char* mem;
 
   if(argptr(0, (void*)&pgdir, sizeof(*pgdir)) < 0)
   {
     return -1;
   }
 
-  return getpgdir(pgdir);
+  if(argptr(1, (void*)&mem, sizeof(*mem)) < 0)
+  {
+    return -1;
+  }
+
+  return getpgdir(pgdir, mem);
 }

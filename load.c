@@ -65,31 +65,25 @@ int main(int argc, char *argv[])
     load("context", p->context, sizeof(struct context));
 
     //proc
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "after loading: sz, name, kstack\n");
-    printf(stdout, "==========================================================\n");
+    printf(stdout, "======================== userspace_after loading: sz, name, kstack =========================\n");
     printf(stdout, "sz = %d\n", p->sz);
     printf(stdout, "name = %s\n", p->name);
     printf(stdout, "kstack = %s\n", p->kstack);
-    printf(stdout, "----------------------------------------------------------\n");
+    printf(stdout, "--------------------------------------------------------------------------------------------\n");
 
     /*
     //pgdir
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "after loading: pgdir\n");
-    printf(stdout, "==========================================================\n");
+    printf(stdout, "========================userspace_after loading: pgdir=========================\n");
     int i;
     for(i = 0; i < p->sz; i += PGSIZE)
     {
         printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(p->pgdir + i));
     }
-    printf(stdout, "----------------------------------------------------------\n");
+    printf(stdout, "-------------------------------------------------------------------------------\n");
     */
 
     //tf
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "after loading: tf\n");
-    printf(stdout, "==========================================================\n");
+    printf(stdout, "======================== userspace_after loading: tf =========================\n");
     printf(stdout, "edi = %d\n", p->tf->edi);
     printf(stdout, "esi = %d\n", p->tf->esi);
     printf(stdout, "ebp = %d\n", p->tf->ebp);
@@ -115,18 +109,16 @@ int main(int argc, char *argv[])
     printf(stdout, "esp = %d\n", p->tf->esp);
     printf(stdout, "ss = %d\n", p->tf->ss);
     printf(stdout, "padding6 = %d\n", p->tf->padding6);
-    printf(stdout, "----------------------------------------------------------\n");
+    printf(stdout, "------------------------------------------------------------------------------\n");
 
     //context
-    printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "after loading: context\n");
-    printf(stdout, "==========================================================\n");
+    printf(stdout, "======================== userspace_after loading: context =========================\n");
     printf(stdout, "edi = %d\n", p->context->edi);
     printf(stdout, "esi = %d\n", p->context->esi);
     printf(stdout, "ebx = %d\n", p->context->ebx);
     printf(stdout, "ebp = %d\n", p->context->ebp);
     printf(stdout, "eip = %d\n", p->context->eip);
-    printf(stdout, "----------------------------------------------------------\n");
+    printf(stdout, "-----------------------------------------------------------------------------------\n");
 
     exit();
 }

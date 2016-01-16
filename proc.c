@@ -475,25 +475,19 @@ int getproc(struct proc* p)
   *(p->tf) = *(proc->tf);
   *(p->context) = *(proc->context);
 
-  cprintf("====================kernelspace-origin====================\n");
-  cprintf("sz, name, kstack\n");
-  cprintf("==========================================================\n");
+  cprintf("==================== kernelspace-origin_sz, name, kstack ====================\n");
   cprintf("sz = %d\n", proc->sz);
   cprintf("name = %s\n", proc->name);
   cprintf("kstack = %s\n", proc->kstack);
-  cprintf("----------------------------------------------------------\n");
+  cprintf("-----------------------------------------------------------------------------\n");
 
-  cprintf("=====================kernelspace-copy=====================\n");
-  cprintf("sz, name, kstack\n");
-  cprintf("==========================================================\n");
+  cprintf("===================== kernelspace-copy_sz, name, kstack =====================\n");
   cprintf("sz = %d\n", p->sz);
   cprintf("name = %s\n", p->name);
   cprintf("kstack = %s\n", p->kstack);
-  cprintf("----------------------------------------------------------\n");
+  cprintf("-----------------------------------------------------------------------------\n");
 
-  cprintf("====================kernelspace-origin====================\n");
-  cprintf("tf\n");
-  cprintf("==========================================================\n");
+  cprintf("==================== kernelspace-origin_tf ====================\n");
   cprintf("edi = %d\n", proc->tf->edi);
   cprintf("esi = %d\n", proc->tf->esi);
   cprintf("ebp = %d\n", proc->tf->ebp);
@@ -519,11 +513,9 @@ int getproc(struct proc* p)
   cprintf("esp = %d\n", proc->tf->esp);
   cprintf("ss = %d\n", proc->tf->ss);
   cprintf("padding6 = %d\n", proc->tf->padding6);
-  cprintf("----------------------------------------------------------\n");
+  cprintf("---------------------------------------------------------------\n");
 
-  cprintf("=====================kernelspace-copy=====================\n");
-  cprintf("tf\n");
-  cprintf("==========================================================\n");
+  cprintf("===================== kernelspace-copy_tf =====================\n");
   cprintf("edi = %d\n", p->tf->edi);
   cprintf("esi = %d\n", p->tf->esi);
   cprintf("ebp = %d\n", p->tf->ebp);
@@ -549,53 +541,112 @@ int getproc(struct proc* p)
   cprintf("esp = %d\n", p->tf->esp);
   cprintf("ss = %d\n", p->tf->ss);
   cprintf("padding6 = %d\n", p->tf->padding6);
-  cprintf("----------------------------------------------------------\n");
+  cprintf("---------------------------------------------------------------\n");
 
-  cprintf("====================kernelspace-origin====================\n");
-  cprintf("context\n");
-  cprintf("==========================================================\n");
+  cprintf("==================== kernelspace-origin_context ====================\n");
   cprintf("edi = %d\n", proc->context->edi);
   cprintf("esi = %d\n", proc->context->esi);
   cprintf("ebx = %d\n", proc->context->ebx);
   cprintf("ebp = %d\n", proc->context->ebp);
   cprintf("eip = %d\n", proc->context->eip);
-  cprintf("----------------------------------------------------------\n");
+  cprintf("--------------------------------------------------------------------\n");
 
-  cprintf("=====================kernelspace-copy=====================\n");
-  cprintf("context\n");
-  cprintf("==========================================================\n");
+  cprintf("===================== kernelspace-copy_context =====================\n");
   cprintf("edi = %d\n", p->context->edi);
   cprintf("esi = %d\n", p->context->esi);
   cprintf("ebx = %d\n", p->context->ebx);
   cprintf("ebp = %d\n", p->context->ebp);
   cprintf("eip = %d\n", p->context->eip);
-  cprintf("----------------------------------------------------------\n");
+  cprintf("--------------------------------------------------------------------\n");
 
   return 0;
 }
 
-int getpgdir(pde_t* pgdir)
+// Return the address of the PTE in page table pgdir
+// that corresponds to virtual address va.  If alloc!=0,
+// create any required page table pages.
+static pte_t *
+walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
-  //todo
+  pde_t *pde;
+  pte_t *pgtab;
 
-  int i;
-  cprintf("====================kernelspace-origin====================\n");
-  cprintf("pgdir\n");
-  cprintf("==========================================================\n");
-  for(i = 0; i < proc->sz; i += PGSIZE)
+  pde = &pgdir[PDX(va)];
+  if(*pde & PTE_P){
+    pgtab = (pte_t*)p2v(PTE_ADDR(*pde));
+  } else {
+    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+      return 0;
+    // Make sure all those PTE_P bits are zero.
+    memset(pgtab, 0, PGSIZE);
+    // The permissions here are overly generous, but they can
+    // be further restricted by the permissions in the page table
+    // entries, if necessary.
+    *pde = v2p(pgtab) | PTE_P | PTE_W | PTE_U;
+  }
+  return &pgtab[PTX(va)];
+}
+
+// Create PTEs for virtual addresses starting at va that refer to
+// physical addresses starting at pa. va and size might not
+// be page-aligned.
+static int
+mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
+{
+  char *a, *last;
+  pte_t *pte;
+
+  a = (char*)PGROUNDDOWN((uint)va);
+  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
+  for(;;){
+    if((pte = walkpgdir(pgdir, a, 1)) == 0)
+      return -1;
+    if(*pte & PTE_P)
+      panic("remap");
+    *pte = pa | perm | PTE_P;
+    if(a == last)
+      break;
+    a += PGSIZE;
+    pa += PGSIZE;
+  }
+  return 0;
+}
+
+int getpgdir(pde_t* pgdir, char *mem)
+{
+  //pgdir : d ==> output of function copyuvm
+//  uint sz = proc->sz;
+  pde_t *pte;
+  uint pa, i, flags;
+
+    for(i = 0; i < 12 * PGSIZE; i += PGSIZE) {
+      if ((pte = walkpgdir(proc->pgdir, (void *) i, 0)) == 0)
+        panic("copyuvm: pte should exist");
+      if (!(*pte & PTE_P))
+        panic("copyuvm: page not present");
+      pa = PTE_ADDR(*pte);
+      flags = PTE_FLAGS(*pte);
+      memmove(mem + i, (char *) p2v(pa), PGSIZE);
+      mappages(pgdir, (void *) i, PGSIZE, v2p(mem), flags);
+      cprintf("==================== debug ====================\n");
+      cprintf("i = %d, pte = %d, base: page address = %d, page value = %d\n", i, pte, mem + i, *(mem + i));
+      cprintf("                  copy: page address = %d, page value = %d\n", (char*)p2v(pa), *((char*)p2v(pa)));
+    }
+
+
+  cprintf("==================== kernelspace-origin_pgdir ====================\n");
+  for(i = 0; i < 12 * PGSIZE; i += PGSIZE)
   {
     cprintf("page '%d'th = %d\n", i/PGSIZE, *(proc->pgdir + i));
   }
-  cprintf("----------------------------------------------------------\n");
+  cprintf("------------------------------------------------------------------\n");
 
-  cprintf("=====================kernelspace-copy=====================\n");
-  cprintf("pgdir\n");
-  cprintf("==========================================================\n");
-  for(i = 0; i < proc->sz; i += PGSIZE)
+  cprintf("===================== kernelspace-copy_pgdir =====================\n");
+  for(i = 0; i < 12 * PGSIZE; i += PGSIZE)
   {
-    cprintf("page '%d'th = %d\n", i/PGSIZE, *(pgdir + i));
+    cprintf("page '%d'th = %d\n", i/PGSIZE, *(mem + i));
   }
-  cprintf("----------------------------------------------------------\n");
+  cprintf("------------------------------------------------------------------\n");
 
   return 0;
 }
