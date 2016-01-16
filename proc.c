@@ -574,26 +574,72 @@ int getproc(struct proc* p)
   return 0;
 }
 
-int getpgdir(pde_t* pgdir)
+// Return the address of the PTE in page table pgdir
+// that corresponds to virtual address va.  If alloc!=0,
+// create any required page table pages.
+static pte_t *
+walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
-  //todo
+  pde_t *pde;
+  pte_t *pgtab;
 
-  int i;
-  cprintf("====================kernelspace-origin====================\n");
-  cprintf("pgdir\n");
-  cprintf("==========================================================\n");
-  for(i = 0; i < proc->sz; i += PGSIZE)
+  pde = &pgdir[PDX(va)];
+  if(*pde & PTE_P){
+    pgtab = (pte_t*)p2v(PTE_ADDR(*pde));
+  } else {
+    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+      return 0;
+    // Make sure all those PTE_P bits are zero.
+    memset(pgtab, 0, PGSIZE);
+    // The permissions here are overly generous, but they can
+    // be further restricted by the permissions in the page table
+    // entries, if necessary.
+    *pde = v2p(pgtab) | PTE_P | PTE_W | PTE_U;
+  }
+  return &pgtab[PTX(va)];
+}
+
+int getpgs(char* pgs)
+{
+  pte_t *pte;
+  uint pa, i;
+
+  for(i = 0; i < 12 * PGSIZE; i += PGSIZE)
   {
-    cprintf("page '%d'th = %d\n", i/PGSIZE, *(proc->pgdir + i));
+    if((pte = walkpgdir(proc->pgdir, (void *) i, 0)) == 0)
+    {
+      panic("copyuvm: pte should exist");
+    }
+
+    if(!(*pte & PTE_P))
+    {
+      panic("copyuvm: page not present");
+    }
+
+    pa = PTE_ADDR(*pte);
+    memmove(pgs + i, (char*)p2v(pa), PGSIZE);
+
+    cprintf("\ni = %d, pte = %d\n", i, pte);
+    cprintf("base: page address = %d, page value = %d\n", pgs + i, *(pgs + i));
+    cprintf("copy: page address = %d, page value = %d\n", (char*)p2v(pa), *((char*)p2v(pa)));
+  }
+
+  //int num = proc->sz / PGSIZE;
+  cprintf("====================kernelspace-origin====================\n");
+  cprintf("pgs\n");
+  cprintf("==========================================================\n");
+  for(i = 0; i < 12; i++)
+  {
+    cprintf("page '%d'th = %d\n", i, *(proc->pgdir + i * PGSIZE));
   }
   cprintf("----------------------------------------------------------\n");
 
   cprintf("=====================kernelspace-copy=====================\n");
-  cprintf("pgdir\n");
+  cprintf("pgs\n");
   cprintf("==========================================================\n");
-  for(i = 0; i < proc->sz; i += PGSIZE)
+  for(i = 0; i < 12; i++)
   {
-    cprintf("page '%d'th = %d\n", i/PGSIZE, *(pgdir + i));
+    cprintf("page '%d'th = %d\n", i, *(pgs + i * PGSIZE));
   }
   cprintf("----------------------------------------------------------\n");
 

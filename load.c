@@ -53,16 +53,24 @@ void load(char* name, void* ptr, int size)
 int main(int argc, char *argv[])
 {
     struct proc* p = (struct proc*) malloc(sizeof(struct proc));
-
-    p->pgdir = (pde_t*) malloc(sizeof(p->sz));
     p->tf = (struct trapframe*) malloc(sizeof(struct trapframe));
     p->context = (struct context*) malloc(sizeof(struct context));
     p->cwd = (struct inode*) malloc(sizeof(struct inode));
 
     load("backup", p, sizeof(struct proc));
-    //load("pgdir", p->pgdir, sizeof(p->sz));
+    char* pgs = (char *) malloc(p->sz);
+
     load("tf", p->tf, sizeof(struct trapframe));
     load("context", p->context, sizeof(struct context));
+    load("pgs", pgs, p->sz);
+
+    int num = p->sz / PGSIZE;
+    p->pgdir = (pde_t*) malloc(sizeof(pde_t) * num);
+    int i;
+    for(i = 0; i < num; i++)
+    {
+        *(p->pgdir + i) = (pde_t) (pgs + i * PGSIZE);
+    }
 
     //proc
     printf(stdout, "========================userspace=========================\n");
@@ -73,18 +81,16 @@ int main(int argc, char *argv[])
     printf(stdout, "kstack = %s\n", p->kstack);
     printf(stdout, "----------------------------------------------------------\n");
 
-    /*
-    //pgdir
+    //pgs
     printf(stdout, "========================userspace=========================\n");
-    printf(stdout, "after loading: pgdir\n");
+    printf(stdout, "after loading: pgs\n");
     printf(stdout, "==========================================================\n");
-    int i;
-    for(i = 0; i < p->sz; i += PGSIZE)
+    for(i = 0; i < num; i++)
     {
-        printf(stdout, "page '%d'th = %d\n", i/PGSIZE, *(p->pgdir + i));
+        printf(stdout, "page '%d'th = %d\n", i, *(pgs + i * PGSIZE));
+        printf(stdout, "page '%d'th = %d\n", i, *(p->pgdir + i));
     }
     printf(stdout, "----------------------------------------------------------\n");
-    */
 
     //tf
     printf(stdout, "========================userspace=========================\n");

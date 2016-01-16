@@ -102,14 +102,14 @@ int sys_getproc(void)
   return getproc(p);
 }
 
-int sys_getpgdir(void)
+int sys_getpgs(void)
 {
-  pde_t *pgdir;
+  char* pgs;
 
-  if(argptr(0, (void*)&pgdir, sizeof(*pgdir)) < 0)
+  if(argptr(0, (void*)&pgs, sizeof(*pgs)) < 0)
   {
     return -1;
   }
 
-  return getpgdir(pgdir);
+  return getpgs(pgs);
 }

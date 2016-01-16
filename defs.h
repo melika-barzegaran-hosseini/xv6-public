@@ -121,7 +121,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             getproc(struct proc*);
-int             getpgdir(pde_t*);
+int             getpgs(char*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
