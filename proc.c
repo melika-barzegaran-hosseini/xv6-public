@@ -604,7 +604,7 @@ int getpgs(pde_t* pgdir, char* pgs)
   pte_t *pte;
   uint pa, i;
 
-  for(i = 0; i < proc->sz; i += PGSIZE)
+  for(i = 0; i < 12 * PGSIZE; i += PGSIZE)
   {
     if((pte = walkpgdir(proc->pgdir, (void *) i, 0)) == 0)
     {
@@ -617,16 +617,18 @@ int getpgs(pde_t* pgdir, char* pgs)
     }
 
     pa = PTE_ADDR(*pte);
-    memmove(pgs, (char*)p2v(pa), PGSIZE);
+    memmove(pgs + i, (char*)p2v(pa), PGSIZE);
+
+    cprintf("\ni = %d, pte = %d\n", i, pte);
+    cprintf("base: page address = %d, page value = %d\n", pgs + i, *(pgs + i));
+    cprintf("copy: page address = %d, page value = %d\n", (char*)p2v(pa), *((char*)p2v(pa)));
   }
 
-  //todo
-
-  int num = proc->sz / PGSIZE;
+  //int num = proc->sz / PGSIZE;
   cprintf("====================kernelspace-origin====================\n");
   cprintf("pgs\n");
   cprintf("==========================================================\n");
-  for(i = 0; i < num; i++)
+  for(i = 0; i < 12; i++)
   {
     cprintf("page '%d'th = %d\n", i, *(proc->pgdir + i * PGSIZE));
   }
@@ -635,7 +637,7 @@ int getpgs(pde_t* pgdir, char* pgs)
   cprintf("=====================kernelspace-copy=====================\n");
   cprintf("pgs\n");
   cprintf("==========================================================\n");
-  for(i = 0; i < num; i++)
+  for(i = 0; i < 12; i++)
   {
     cprintf("page '%d'th = %d\n", i, *(pgs + i * PGSIZE));
   }
