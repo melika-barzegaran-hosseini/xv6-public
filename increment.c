@@ -106,13 +106,7 @@ void stop(void)
     save("context", p->context, sizeof(struct context));
 
     int num = p->sz / PGSIZE;
-    pde_t* pgdir = (pde_t*) malloc(sizeof(pde_t) * num);
     char* pgs = (char *) malloc(p->sz);
-    int i;
-    for(i = 0; i < num; i++)
-    {
-        *(pgdir + i) = (pde_t) (pgs + i * PGSIZE);
-    }
 
     getpgs(pgs);
 
@@ -120,13 +114,14 @@ void stop(void)
     printf(stdout, "========================userspace=========================\n");
     printf(stdout, "before saving: pgs\n");
     printf(stdout, "==========================================================\n");
+    int i;
     for(i = 0; i < num; i++)
     {
         printf(stdout, "page '%d'th = %d\n", i, *(pgs + i * PGSIZE));
     }
     printf(stdout, "----------------------------------------------------------\n");
 
-    save("pgs", pgs, sizeof(p->sz));
+    save("pgs", pgs, p->sz);
 
     exit();
 }
