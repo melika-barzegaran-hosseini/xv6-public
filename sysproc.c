@@ -113,3 +113,16 @@ int sys_getpgs(void)
 
   return getpgs(pgs);
 }
+
+int sys_loadproc(void)
+{
+  struct proc *p;
+  char* pgs;
+
+  if(argptr(0, (void*)&p, sizeof(*p)) < 0 || argptr(1, (void*)&pgs, sizeof(*pgs)) < 0)
+  {
+    return -1;
+  }
+
+  return loadproc(p, pgs);
+}

@@ -645,3 +645,41 @@ int getpgs(char* pgs)
 
   return 0;
 }
+
+int loadproc(struct proc* p, char* pgs)
+{
+  int pid;
+  struct proc *np;
+
+  //todo: allocproc, copyuvm must be refined. np->pgdir must be filled with addresses of pgs.
+
+  if((np = allocproc()) == 0)
+  {
+    return  -1;
+  }
+
+  if((np->pgdir = copyuvm(p->pgdir, p->sz)) == 0)
+  {
+    kfree(np->kstack);
+    np->kstack = 0;
+    np->state = UNUSED;
+    return -1;
+  }
+  np->sz = p->sz;
+  np->parent = proc;
+  *np->tf = *p->tf;
+
+  np->tf->eax = 0;
+
+  np->cwd = idup(p->cwd);
+
+  safestrcpy(np->name, p->name, sizeof(p->name));
+
+  pid = np->pid;
+
+  acquire(&ptable.lock);
+  np->state = RUNNABLE;
+  release(&ptable.lock);
+
+  return pid;
+}
