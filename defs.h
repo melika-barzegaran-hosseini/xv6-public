@@ -1,3 +1,5 @@
+#include "types.h"
+
 struct buf;
 struct context;
 struct file;
@@ -119,6 +121,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             getproc(struct proc*);
+int             getpgdir(pde_t*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
