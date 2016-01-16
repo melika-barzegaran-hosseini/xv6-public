@@ -599,7 +599,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   return &pgtab[PTX(va)];
 }
 
-int getpgs(pde_t* pgdir, char* pgs)
+int getpgs(char* pgs)
 {
   pte_t *pte;
   uint pa, i;

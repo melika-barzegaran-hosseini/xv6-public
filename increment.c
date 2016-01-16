@@ -114,7 +114,7 @@ void stop(void)
         *(pgdir + i) = (pde_t) (pgs + i * PGSIZE);
     }
 
-    getpgs(pgdir, pgs);
+    getpgs(pgs);
 
     //pgs
     printf(stdout, "========================userspace=========================\n");
